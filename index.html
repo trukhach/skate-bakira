@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Скейт Бакира</title>
+<link rel="icon" href="icon.png">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--acc:#ffb21f;--acc2:#ff3d7f;--ink:#111;--panel:rgba(14,14,18,.86);--txt:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:var(--txt);font-family:"Trebuchet MS",Arial,sans-serif;touch-action:none;overscroll-behavior:none}
+#app{position:fixed;left:0;top:0;width:100vw;height:100vh;overflow:hidden;transform-origin:0 0}
+#c{position:absolute;left:0;top:0;display:block}
+.h{font-family:Impact,"Arial Black","Arial Narrow Bold",sans-serif;letter-spacing:.02em;text-transform:uppercase}
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;display:none}
+#trick{position:absolute;left:14px;top:10px;max-width:46%;text-shadow:0 2px 0 #000,0 0 8px #000}
+#trick .t{font-size:24px;color:#fff}
+#trick .l{font-size:14px;color:#ffe9b0;margin-top:2px}
+#trick .p{font-size:18px;color:var(--acc)}
+#score{position:absolute;right:62px;top:10px;font-size:28px;text-shadow:0 2px 0 #000,0 0 8px #000;text-align:right}
+#score small{display:block;font-size:12px;color:#ddd;font-family:Arial;letter-spacing:0}
+#goal{position:absolute;left:50%;top:8px;transform:translateX(-50%);background:var(--panel);border:2px solid var(--acc);border-radius:10px;padding:4px 12px;font-size:14px;text-align:center;white-space:nowrap;max-width:44%;overflow:hidden;text-overflow:ellipsis}
+#goal b{color:var(--acc)}
+#timer{color:#ff6b6b;font-weight:bold;margin-left:6px}
+#footy{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:200px;height:14px;border:2px solid #fff;border-radius:8px;background:rgba(0,0,0,.5);overflow:hidden}
+#footy i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3d7f,#ffb21f)}
+#footy span{position:absolute;left:0;right:0;top:-1px;text-align:center;font-size:10px;font-weight:bold;color:#fff;text-shadow:0 1px 2px #000}
+#msg{position:absolute;left:0;right:0;top:17%;text-align:center;font-size:44px;color:#fff;text-shadow:0 4px 0 #000,0 0 18px rgba(0,0,0,.8);opacity:0;transition:opacity .2s, transform .2s;transform:scale(.9)}
+#msg.on{opacity:1;transform:scale(1)}
+#msg small{display:block;font-size:20px;color:var(--acc)}
+#bal{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center;display:none}
+#bal .a{font-size:64px;line-height:1;color:#fff;text-shadow:0 0 10px var(--acc2),0 3px 0 #000}
+#bal .bar{width:120px;height:8px;background:rgba(0,0,0,.6);border-radius:4px;overflow:hidden;margin:4px auto 0;border:1px solid #fff}
+#bal .bar i{display:block;height:100%;background:#7CFF4F}
+#call{position:absolute;left:50%;top:18%;transform:translateX(-50%);font-size:26px;color:#7CFF4F;text-shadow:0 2px 0 #000;display:none;white-space:nowrap}
+#lb{position:absolute;inset:0;pointer-events:none;display:none}
+#lb:before,#lb:after{content:"";position:absolute;left:0;right:0;height:9%;background:#000}
+#lb:before{top:0}#lb:after{bottom:0}
+#lb .rec{position:absolute;right:20px;top:11%;color:#ff3030;font:bold 16px Arial;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+#popups{position:absolute;inset:0;pointer-events:none}
+.pop{position:absolute;font-size:22px;color:var(--acc);text-shadow:0 2px 0 #000;animation:up 1s forwards;white-space:nowrap}
+@keyframes up{to{transform:translateY(-50px);opacity:0}}
+/* controls */
+#ctl{position:absolute;inset:0;display:none}
+#joy{position:absolute;width:130px;height:130px;margin:-65px 0 0 -65px;border-radius:50%;border:3px solid rgba(255,255,255,.35);background:radial-gradient(circle,rgba(255,255,255,.08),rgba(255,255,255,.02));display:none;pointer-events:none}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#joyhint{position:absolute;left:30px;bottom:30px;width:110px;height:110px;border-radius:50%;border:3px dashed rgba(255,255,255,.25);pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,.5);text-align:center}
+.btn{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:bold;border:3px solid rgba(255,255,255,.7);box-shadow:0 3px 10px rgba(0,0,0,.4);touch-action:none}
+#bOllie{right:28px;bottom:26px;width:118px;height:118px;background:radial-gradient(circle at 40% 35%,#ffc64a,#e07b00);font-size:20px}
+#bOllie.dn{transform:scale(.92);filter:brightness(1.2)}
+#bMan{right:158px;bottom:22px;width:70px;height:70px;background:radial-gradient(circle at 40% 35%,#56d4ff,#1572b8);font-size:11px}
+#bFooty{right:150px;bottom:104px;width:62px;height:62px;background:#333;font-size:22px;opacity:.5}
+#bFooty.rdy{opacity:1;background:radial-gradient(circle at 40% 35%,#ff6fa1,#c2185b);animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 22px #ff3d7f}}
+#bPause{right:10px;top:10px;width:42px;height:42px;background:rgba(0,0,0,.45);font-size:16px;border-width:2px}
+#swipehint{position:absolute;right:38%;top:40%;color:rgba(255,255,255,.35);font-size:13px;text-align:center;pointer-events:none}
+/* menus */
+.scr{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.7))}
+.scr.on{display:flex}
+.pnl{background:var(--panel);border:2px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 18px;max-width:92%;max-height:92%;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.logo{font-size:min(13vh,72px);line-height:.9;text-align:center;color:#fff;text-shadow:0 5px 0 #000,0 0 30px rgba(255,120,0,.6);transform:rotate(-4deg);margin-bottom:6px}
+.logo span{color:var(--acc);display:block}
+.logo em{font-style:normal;color:var(--acc2)}
+.mbtn{display:block;width:100%;margin:7px 0;padding:10px 18px;font-size:20px;color:#111;background:linear-gradient(180deg,#ffd166,#ff9f1c);border:none;border-radius:10px;box-shadow:0 4px 0 #a35d00;font-family:Impact,"Arial Black",sans-serif;text-transform:uppercase;cursor:pointer;letter-spacing:.03em}
+.mbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #a35d00}
+.mbtn.g{background:linear-gradient(180deg,#e9e9e9,#bdbdbd);box-shadow:0 4px 0 #666}
+.mbtn.s{font-size:15px;padding:7px 12px}
+.row{display:flex;gap:10px;align-items:stretch}
+.row>*{flex:1}
+h2{margin:0 0 8px;font-size:26px;color:var(--acc)}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0}
+.gi{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:8px;cursor:pointer;font-size:13px;position:relative}
+.gi b{display:block;font-size:15px;color:#fff;font-family:Impact,"Arial Black",sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.gi.done{border-color:#7CFF4F}
+.gi.done:after{content:"✔";position:absolute;right:8px;top:6px;color:#7CFF4F;font-size:16px}
+.gi.lock{opacity:.35;pointer-events:none}
+.gi small{color:#bbb}
+.mentor{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.ava{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Impact,"Arial Black";font-size:30px;color:#111;flex:0 0 auto;border:3px solid #fff}
+.txt{font-size:16px;line-height:1.35;color:#eee}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1);gap:20px;font-size:16px}
+.tog{min-width:110px;padding:6px 10px;border-radius:8px;border:none;background:#444;color:#fff;font-weight:bold;font-size:14px;cursor:pointer}
+.tog.on{background:#2fa84f}
+table{border-collapse:collapse;font-size:14px;width:100%}
+td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
+td:first-child{color:var(--acc);white-space:nowrap;font-weight:bold}
+#load{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111;z-index:50}
+#load .bar{width:220px;height:10px;border:2px solid #fff;border-radius:6px;margin-top:14px;overflow:hidden}
+#load .bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+#err{position:absolute;left:10px;bottom:10px;right:10px;color:#f66;font:12px monospace;white-space:pre-wrap;z-index:99;pointer-events:none}
+.stk{display:inline-block;background:#ffb21f;color:#111;border-radius:6px;padding:3px 8px;margin:3px;font-weight:bold;font-size:12px;transform:rotate(-2deg)}
+.stk.no{background:#444;color:#888}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="lb"><div class="rec">● REC</div></div>
+  <div id="hud">
+    <div id="trick"><div class="t h"></div><div class="l"></div><div class="p h"></div></div>
+    <div id="score" class="h">0<small></small></div>
+    <div id="goal"></div>
+    <div id="footy"><i></i><span>ФУТАЖ</span></div>
+    <div id="call" class="h"></div>
+    <div id="bal"><div class="a">▲</div><div class="bar"><i></i></div></div>
+    <div id="popups"></div>
+    <div id="msg" class="h"></div>
+  </div>
+  <div id="ctl">
+    <div id="joyhint">ДЖОЙСТИК<br>руль / газ</div>
+    <div id="joy"><div id="knob"></div></div>
+    <div id="swipehint">свайп = трюк</div>
+    <div id="bOllie" class="btn h">ОЛЛИ</div>
+    <div id="bMan" class="btn h">МАНУАЛ</div>
+    <div id="bFooty" class="btn">🎥</div>
+    <div id="bPause" class="btn">❚❚</div>
+  </div>
+
+  <div id="mMain" class="scr"><div class="pnl" style="min-width:300px;background:rgba(10,10,14,.6)">
+    <div class="logo h">Скейт<span>Бакира</span></div>
+    <button class="mbtn" data-go="story">Сюжет</button>
+    <div class="row"><button class="mbtn g s" data-go="free">Свободное катание</button><button class="mbtn g s" data-go="help">Управление</button></div>
+    <div class="row"><button class="mbtn g s" data-go="records">Рекорды</button><button class="mbtn g s" data-go="options">Настройки</button></div>
+  </div></div>
+
+  <div id="mStory" class="scr"><div class="pnl" style="width:min(900px,94%)">
+    <div class="row" style="align-items:center"><h2 class="h" id="chTitle">Сюжет</h2><div style="flex:0 0 auto"><button class="mbtn g s" data-go="main">Назад</button></div></div>
+    <div class="row" id="chTabs" style="margin-bottom:6px"></div>
+    <div class="list" id="goalList"></div>
+  </div></div>
+
+  <div id="mBrief" class="scr"><div class="pnl" style="width:min(640px,92%)">
+    <div class="mentor"><div class="ava" id="bAva">Т</div><div><h2 class="h" id="bTitle" style="margin:0">Задание</h2><small id="bSub" style="color:#bbb"></small></div></div>
+    <div class="txt" id="bText"></div>
+    <div class="row" style="margin-top:12px"><button class="mbtn" id="bStart">Поехали!</button><button class="mbtn g" data-go="story">Назад</button></div>
+  </div></div>
+
+  <div id="mFree" class="scr"><div class="pnl" style="width:min(820px,94%)">
+    <div class="row" style="align-items:center"><h2 class="h">Свободное катание</h2><div style="flex:0 0 auto"><button class="mbtn g s" data-go="main">Назад</button></div></div>
+    <div class="list" id="mapList"></div>
+  </div></div>
+
+  <div id="mHelp" class="scr"><div class="pnl" style="width:min(860px,94%)">
+    <div class="row" style="align-items:center"><h2 class="h">Управление</h2><div style="flex:0 0 auto"><button class="mbtn g s" data-back="1">Назад</button></div></div>
+    <table>
+      <tr><td>Джойстик (левая часть экрана)</td><td>Влево/вправо — руль. Вверх — разгон (2-я скорость). Вниз — тормоз. В рампе: качай в сторону движения.</td></tr>
+      <tr><td>ОЛЛИ</td><td>Прыжок. Держи дольше — прыгнешь выше. С кнопки можно сразу вести пальцем — это свайп-трюк.</td></tr>
+      <tr><td>Свайп в воздухе (правая часть)</td><td>↑ Кикфлип · → Инди · ← Эйрволк · ↓ 360.<br>После большого трамплина / в рампе: ↑ Стиффи · → Ростбиф.</td></tr>
+      <tr><td>Грайнды</td><td>Приземлись на рельс, бордюр, трубу — грайнд сам. Свайп прямо перед касанием: ↑ Носграйнд, ↓ Файв-О, ← → Бордслайд. Иначе — 50-50.</td></tr>
+      <tr><td>Баланс</td><td>На длинных грайндах и мануалах всплывает стрелка — быстро свайпни в её сторону.</td></tr>
+      <tr><td>МАНУАЛ</td><td>На скорости — езда на задних колёсах. Повторное нажатие — выход.</td></tr>
+      <tr><td>Рампа</td><td>У края стенки: свайп ↓ — Лип-стол, ↑ — Хендплант. ОЛЛИ на подъёме — выше вылет.</td></tr>
+      <tr><td>Линии</td><td>Делай трюки без пауз — растёт множитель. Один и тот же трюк дважды подряд множитель не увеличивает.</td></tr>
+      <tr><td>Футаж 🎥</td><td>Шкала копится за трюки. Полная — жми камеру: замедление и съёмка.</td></tr>
+      <tr><td>Клавиатура</td><td>Стрелки — движение, Пробел — олли, W/A/S/D — трюки, E — мануал, F — футаж, Esc — пауза.</td></tr>
+    </table>
+  </div></div>
+
+  <div id="mRecords" class="scr"><div class="pnl" style="width:min(600px,92%)">
+    <div class="row" style="align-items:center"><h2 class="h">Рекорды</h2><div style="flex:0 0 auto"><button class="mbtn g s" data-go="main">Назад</button></div></div>
+    <table id="recTable"></table>
+    <h2 class="h" style="margin-top:12px;font-size:20px">Альбом наград</h2>
+    <div id="stickers"></div>
+  </div></div>
+
+  <div id="mOptions" class="scr"><div class="pnl" style="width:min(560px,92%)">
+    <div class="row" style="align-items:center"><h2 class="h">Настройки</h2><div style="flex:0 0 auto"><button class="mbtn g s" data-back="1">Назад</button></div></div>
+    <div class="opt">Звуки<button class="tog" data-opt="sound"></button></div>
+    <div class="opt">Музыка<button class="tog" data-opt="music"></button></div>
+    <div class="opt">Вибрация<button class="tog" data-opt="vibro"></button></div>
+    <div class="opt">Подсказки перед заданием<button class="tog" data-opt="tips"></button></div>
+    <div class="opt">Графика<button class="tog on" id="qBtn"></button></div>
+    <div class="opt">Стиль Бакира<button class="tog on" id="styleBtn"></button></div>
+    <div class="opt">Сбросить прогресс<button class="tog" id="resetBtn" style="background:#a32">Сброс</button></div>
+  </div></div>
+
+  <div id="mPause" class="scr"><div class="pnl" style="min-width:280px">
+    <h2 class="h" style="text-align:center">Пауза</h2>
+    <div class="txt" id="pGoal" style="font-size:14px;margin-bottom:6px"></div>
+    <button class="mbtn" id="pResume">Продолжить</button>
+    <button class="mbtn g" id="pRetry">Заново</button>
+    <div class="row"><button class="mbtn g s" data-go="help" data-from="pause">Управление</button><button class="mbtn g s" data-go="options" data-from="pause">Настройки</button></div>
+    <button class="mbtn g" id="pMenu">В меню</button>
+  </div></div>
+
+  <div id="mResult" class="scr"><div class="pnl" style="width:min(560px,92%);text-align:center">
+    <h2 class="h" id="rTitle" style="font-size:40px">Готово!</h2>
+    <div class="txt" id="rText"></div>
+    <div class="row" style="margin-top:12px"><button class="mbtn" id="rNext">Дальше</button><button class="mbtn g" id="rRetry">Ещё раз</button><button class="mbtn g" id="rMenu">Меню</button></div>
+  </div></div>
+
+  <div id="load"><div class="logo h">Скейт<span>Бакира</span></div><div class="bar"><i id="loadBar"></i></div><div id="loadTxt" style="margin-top:8px;font-size:13px;color:#aaa">Загрузка…</div></div>
+  <div id="err"></div>
+</div>
+<script>window.onerror=function(m,s,l,c,e){var el=document.getElementById('err');if(el)el.textContent+=m+' @'+(s||'').split('/').pop()+':'+l+'\n';};</script>
+<script src="js/engine.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/skater.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
